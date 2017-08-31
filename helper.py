@@ -16,7 +16,7 @@ def handle_error(error, status_code):
     resp.status_code = status_code
     return resp
 
-def get_access_token(url, headers, data)
+def get_access_token(url, headers, data):
     r = requests.post(url, headers=headers, data=data)
     return r
 
