@@ -1,6 +1,7 @@
 from functools import wraps
 from base64 import b64encode
 from jose import jwt
+from flask import Flask, jsonify, request, _app_ctx_stack, json
 import requests
 ALGORITHMS = ["RS256"]
 SCOPES = 'username' # Custom scopes that you want to pass as part of the request when requesting access token
@@ -8,7 +9,7 @@ SCOPES = 'username' # Custom scopes that you want to pass as part of the request
 AUTH_SERVER_ID = 'YOUR_OKTA_AUTH_SERVER_ID' # Replace with your okta authroziation server id
 AUTH_SERVER_DOMAIN = 'YOUR_OKTA_DOMAIN' # Replace with your okta org
 AUTH_DOMAIN_ENDPOINT = '{}/oauth2/{}'.format(AUTH_SERVER_DOMAIN, AUTH_SERVER_ID)
-API_AUDIENCE = 'http://localhost:3000/' # whatever your API domain is called and should be added as audience to the API
+API_AUDIENCE = 'http://localhost:5000/' # whatever your API domain is called and should be added as audience to the API
 
 def handle_error(error, status_code):
     resp = jsonify(error)
@@ -65,7 +66,7 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = get_token_auth_header()
-        jsonurl = requests.get("{}/v1/keys".format(auth_domain_endpoint))
+        jsonurl = requests.get("{}/v1/keys".format(AUTH_DOMAIN_ENDPOINT))
         jwks = jsonurl.json()
         try:
             unverified_header = jwt.get_unverified_header(token)
@@ -88,7 +89,7 @@ def requires_auth(f):
                     rsa_key,
                     algorithms=ALGORITHMS,
                     audience=API_AUDIENCE,
-                    issuer=auth_domain_endpoint
+                    issuer=AUTH_DOMAIN_ENDPOINT
                 )
             except jwt.ExpiredSignatureError:
                 return handle_error({"code": "token_expired",

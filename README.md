@@ -56,17 +56,13 @@ For resource password flow, create an OIDC application, by clicking on Applicati
 For client credential flow, create an OIDC application, by clicking on Application -> Add application -> Create new app -> Web -> OpenID Connect
         Make sure #Client credentials grant# is selected
 
-Edit the code to include the details from your Okta environment in constants below in `app.py`:
-
-```
-auth_server_id = 'YOUR_OKTA_AUTH_SERVER_ID' # Replace with your okta authorization server id
-auth_server_url = 'YOUR_OKTA_DOMAIN' # Replace with your okta org
-```
 
 Edit the code to include the details for the custom scopes in `helper.py`:
 
 ```
-CUSTOM_SCOPES= 'Your custome scopes'
+AUTH_SERVER_ID = 'YOUR_OKTA_AUTH_SERVER_ID' # Replace with your okta authorization server id
+AUTH_SERVER_DOMAIN = 'YOUR_OKTA_DOMAIN' # Replace with your okta org
+CUSTOM_SCOPES= 'Your custom scopes'
 ```
 
 Edit the code to include the details for the same custom scope you want to check at end point in `app.py`:
@@ -86,9 +82,9 @@ Uncomment the below two lines in the `app.py` file and save it (code will automa
 
 ```
 #oauth_body = get_oauth_body_client_credentials() # uncomment For client credential flow
-#basic_authorization_header = generate_basic_auth(cred_dict) # uncomment For client credential flow
 ```
 
+Make sure to use the client credential of the web OIDC client app.
 First authenticate by providing the client credentials against the authenticate end point:
 
 ```
@@ -103,8 +99,9 @@ curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" http://localhost:5000/card_ser
 
 ## Resource password flow
 
-You can run the below commands as is, if you have curl installed or use postman:
+You can run the below commands as is, if you have curl installed or use postman.
 
+Make sure to use the client credential of the native app OIDC client app.
 First authenticate by providing the client credentials against the authenticate end point:
 
 ```
