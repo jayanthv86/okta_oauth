@@ -1,0 +1,131 @@
+from functools import wraps
+from base64 import b64encode
+from jose import jwt
+ALGORITHMS = ["RS256"]
+
+def handle_error(error, status_code):
+    resp = jsonify(error)
+    resp.status_code = status_code
+    return resp
+
+def get_token_auth_header():
+    """Obtains the access token from the Authorization Header
+    """
+    auth = request.headers.get("Authorization", None)
+    if not auth:
+        return handle_error({"code": "authorization_header_missing",
+                             "description":
+                                 "Authorization header is expected"}, 401)
+
+    parts = auth.split()
+
+    if parts[0].lower() != "bearer":
+        return handle_error({"code": "invalid_header",
+                             "description":
+                                 "Authorization header must start with"
+                                 "Bearer"}, 401)
+    elif len(parts) == 1:
+        return handle_error({"code": "invalid_header",
+                             "description": "Token not found"}, 401)
+    elif len(parts) > 2:
+        return handle_error({"code": "invalid_header",
+                             "description": "Authorization header must be"
+                                            "Bearer token"}, 401)
+
+    token = parts[1]
+    return token
+
+def requires_scope(required_scope):
+    """Determines if the required scope is present in the access token
+    Args:
+        required_scope (str): The scope required to access the resource
+    """
+    token = get_token_auth_header()
+    unverified_claims = jwt.get_unverified_claims(token)
+    token_scopes = unverified_claims["scp"]
+    for token_scope in token_scopes:
+        if token_scope == required_scope:
+            return True
+    return False
+
+def requires_auth(f):
+    """Determines if the access token is valid
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = get_token_auth_header()
+        jsonurl = requests.get("{}/v1/keys".format(auth_domain_endpoint))
+        jwks = jsonurl.json()
+        try:
+            unverified_header = jwt.get_unverified_header(token)
+        except jwt.JWTError:
+            return token
+        rsa_key = {}
+        for key in jwks["keys"]:
+            if key["kid"] == unverified_header["kid"]:
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"]
+                }
+        if rsa_key:
+            try:
+                payload = jwt.decode(
+                    token,
+                    rsa_key,
+                    algorithms=ALGORITHMS,
+                    audience=API_AUDIENCE,
+                    issuer=auth_domain_endpoint
+                )
+            except jwt.ExpiredSignatureError:
+                return handle_error({"code": "token_expired",
+                                     "description": "token is expired"}, 401)
+            except jwt.JWTClaimsError:
+                return handle_error({"code": "invalid_claims",
+                                     "description": "incorrect claims,"
+                                                    "please check the audience and issuer"}, 401)
+            except Exception:
+                return handle_error({"code": "invalid_header",
+                                     "description": "Unable to parse authentication"
+                                                    "token."}, 400)
+
+            _app_ctx_stack.top.current_user = payload
+            return f(*args, **kwargs)
+        return handle_error({"code": "invalid_header",
+                             "description": "Unable to find appropriate key"}, 400)
+    return decorated
+
+def generate_basic_auth(cred_dict):
+    """Builds Basic auth header
+    """
+    username = cred_dict.get('username')
+    password = cred_dict.get('password')
+    if not (username and password):
+        return None
+    basic_auth =  b64encode(bytes('{}:{}'.format(username, password))).decode('ascii')
+    return {'Accept': 'application/json',
+            'content-type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + basic_auth + '==' }
+
+def generate_simple_auth(cred_dict):
+    """Builds Basic auth header
+    """
+    username = cred_dict.get('client_id')
+    password = cred_dict.get('client_secret')
+    if not (username and password):
+        return None
+    basic_auth =  b64encode(bytes('{}:{}'.format(username, password))).decode('ascii')
+    return {'Accept': 'application/json',
+            'content-type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + basic_auth }
+
+def get_oauth_body_client_credentials():
+    payload = "grant_type=client_credentials&scope=username"
+    return payload
+
+def get_oauth_body_password(cred_dict):
+    
+    payload = "grant_type=password&username={}&password={}&scope=username".format(cred_dict.get('username', ''), cred_dict.get('password', ''))
+    return payload
