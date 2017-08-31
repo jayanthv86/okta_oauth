@@ -2,7 +2,7 @@
 from flask import Flask, jsonify, request, _app_ctx_stack, json
 import requests
 from helper import generate_basic_auth, get_oauth_body_client_credentials, get_oauth_body_password, requires_auth, requires_scope
-from helper import AUTH_DOMAIN_ENDPOINT
+from helper import AUTH_DOMAIN_ENDPOINT, get_access_token
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'super-secret' # Change to uuid
