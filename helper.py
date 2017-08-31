@@ -1,13 +1,23 @@
 from functools import wraps
 from base64 import b64encode
 from jose import jwt
+import requests
 ALGORITHMS = ["RS256"]
 SCOPES = 'username' # Custom scopes that you want to pass as part of the request when requesting access token
+
+AUTH_SERVER_ID = 'YOUR_OKTA_AUTH_SERVER_ID' # Replace with your okta authroziation server id
+AUTH_SERVER_DOMAIN = 'YOUR_OKTA_DOMAIN' # Replace with your okta org
+AUTH_DOMAIN_ENDPOINT = '{}/oauth2/{}'.format(AUTH_SERVER_DOMAIN, AUTH_SERVER_ID)
+API_AUDIENCE = 'http://localhost:3000/' # whatever your API domain is called and should be added as audience to the API
 
 def handle_error(error, status_code):
     resp = jsonify(error)
     resp.status_code = status_code
     return resp
+
+def get_access_token(url, headers, data)
+    r = requests.post(url, headers=headers, data=data)
+    return r
 
 def get_token_auth_header():
     """Obtains the access token from the Authorization Header

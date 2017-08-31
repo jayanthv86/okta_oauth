@@ -2,14 +2,11 @@
 from flask import Flask, jsonify, request, _app_ctx_stack, json
 import requests
 from helper import generate_basic_auth, get_oauth_body_client_credentials, get_oauth_body_password, requires_auth, requires_scope
+from helper import AUTH_DOMAIN_ENDPOINT
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'super-secret' # Change to uuid
 
-auth_server_id = 'YOUR_OKTA_AUTH_SERVER_ID' # Replace with your okta authroziation server id
-auth_server_url = 'YOUR_OKTA_DOMAIN' # Replace with your okta org
-auth_domain_endpoint = '{}/oauth2/{}'.format(auth_server_url, auth_server_id)
-API_AUDIENCE = 'http://localhost:3000/' # whatever your API domain is called and should be added as audience to the API
 CUSTOM_SCOPE_TOCHECK = 'username' #Custom scopes you want to check at the end point
 
 @app.route('/')
@@ -44,9 +41,8 @@ def authenticate():
     oauth_body = get_oauth_body_password(cred_dict)
     basic_authorization_header = generate_basic_auth(cred_dict)
     #oauth_body = get_oauth_body_client_credentials() # uncomment For client credential flow
-    #basic_authorization_header = generate_basic_auth(cred_dict) # uncomment For client credential flow
-    url = '{}/v1/token'.format(auth_domain_endpoint)
-    r = requests.post(url, headers=basic_authorization_header, data=oauth_body)
+    url = '{}/v1/token'.format(AUTH_DOMAIN_ENDPOINT)
+    r = get_access_token(url, basic_authorization_header, oauth_body)
     return jsonify(r.json()), 200
 
 @app.route('/card_services')
