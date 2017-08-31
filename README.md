@@ -31,6 +31,7 @@ Then, clone this sample from GitHub and install the front-end dependencies:
 ```bash
 # Clone the repo and navigate to the samples-python-flask dir
 $ git clone https://github.com/jayanthv86/okta_oauth.git && cd okta_oauth
+```
 
 # Install the dependencies
 ```bash
@@ -46,12 +47,46 @@ Start by running the following command `python app.py`. This will start up the s
 ## Setup Okta environment
 
 Create an authorization server, by clicking on API -> Authorization server -> Create Authorization server
+    Make sure to add your custom scopes here that you will use in the code
+    Make sure to set access policy, for all clients to access this authorization server
 
-Create an OIDC application, by clicking on Application -> Add application -> Create new app -> Native -> OpenID Connect
+For resource password flow, create an OIDC application, by clicking on Application -> Add application -> Create new app -> Native -> OpenID Connect
+        Make sure #Resource Owner password grant# is selected
+For client credential flow, create an OIDC application, by clicking on Application -> Add application -> Create new app -> Web -> OpenID Connect
+        Make sure #Client credentials grant# is selected
+
+Edit the code to include the details from your Okta environment in constants below in `app.py`:
+
+```
+auth_server_id = 'YOUR_OKTA_AUTH_SERVER_ID' # Replace with your okta authorization server id
+auth_server_url = 'YOUR_OKTA_DOMAIN' # Replace with your okta org
+```
+
+Edit the code to include the details for the custom scopes in `helper.py`:
+
+```
+CUSTOM_SCOPES= 'Your custome scopes'
+```
+
+Edit the code to include the details for the same custom scope you want to check at end point in `app.py`:
+
+```
+CUSTOM_SCOPE_TOCHECK='Your custom scopes you want to check'
+```
+
+The auth server id will be the element https://mycompanyname.okta.com/oauth2/#aus1n9537m60l8ASr2p6
+The okta domain name would be #https://mycompanyname.okta.com
 
 ## Client credential flow
 
-You can run the below commands as is, if you have curl installed or use postman:
+You can run the below commands as is, if you have curl installed or use postman.
+
+Uncomment the below two lines in the `app.py` file and save it (code will automatically reload)
+
+```
+#oauth_body = get_oauth_body_client_credentials() # uncomment For client credential flow
+#basic_authorization_header = generate_basic_auth(cred_dict) # uncomment For client credential flow
+```
 
 First authenticate by providing the client credentials against the authenticate end point:
 

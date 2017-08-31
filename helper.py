@@ -2,6 +2,7 @@ from functools import wraps
 from base64 import b64encode
 from jose import jwt
 ALGORITHMS = ["RS256"]
+SCOPES = 'username' # Custom scopes that you want to pass as part of the request when requesting access token
 
 def handle_error(error, status_code):
     resp = jsonify(error)
@@ -100,18 +101,6 @@ def requires_auth(f):
 def generate_basic_auth(cred_dict):
     """Builds Basic auth header
     """
-    username = cred_dict.get('username')
-    password = cred_dict.get('password')
-    if not (username and password):
-        return None
-    basic_auth =  b64encode(bytes('{}:{}'.format(username, password))).decode('ascii')
-    return {'Accept': 'application/json',
-            'content-type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic ' + basic_auth + '==' }
-
-def generate_simple_auth(cred_dict):
-    """Builds Basic auth header
-    """
     username = cred_dict.get('client_id')
     password = cred_dict.get('client_secret')
     if not (username and password):
@@ -122,10 +111,10 @@ def generate_simple_auth(cred_dict):
             'Authorization': 'Basic ' + basic_auth }
 
 def get_oauth_body_client_credentials():
-    payload = "grant_type=client_credentials&scope=username"
+    payload = "grant_type=client_credentials&scope={}".format(SCOPES)
     return payload
 
 def get_oauth_body_password(cred_dict):
     
-    payload = "grant_type=password&username={}&password={}&scope=username".format(cred_dict.get('username', ''), cred_dict.get('password', ''))
+    payload = "grant_type=password&username={}&password={}&scope={}".format(cred_dict.get('username', ''), cred_dict.get('password', ''), SCOPES)
     return payload
